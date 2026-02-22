@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # আপনার তথ্য এখানে বসান
-BOT_TOKEN = 'আপনার_বট_টোকেন'
+BOT_TOKEN = '8315570920:AAEVbhuUhCFpJYVW8Ls-92H2VzCn1oW7Reg'
 ADMIN_ID = 123456789  # আপনার আইডি
 
 # লগিং সেটআপ
