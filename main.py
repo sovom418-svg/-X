@@ -1,10 +1,11 @@
+import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 
-# আপনার তথ্য এখানে দিন
-BOT_TOKEN = '8315570920:AAEVbhuUhCFpJYVW8Ls-92H2VzCn1oW7Reg'
-ADMIN_ID = 8273597769  # আপনার টেলিগ্রাম আইডি এখানে দিন
+# আপনার তথ্য
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+ADMIN_ID = 8273597769  # আপনার এডমিন আইডি
 
 # লগিং সেটআপ
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -12,70 +13,86 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 # স্টার্ট কমান্ড
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    welcome_text = (
-        f"হ্যালো {user.first_name}!\n"
-        "আমাদের সাপোর্ট টিমে আপনাকে স্বাগতম। আপনার যেকোনো সমস্যার কথা এখানে লিখুন, "
-        "আমাদের টিম দ্রুত আপনার সাথে যোগাযোগ করবে।"
-    )
-    await update.message.reply_text(welcome_text)
-
-# ইউজার মেসেজ অ্যাডমিনের কাছে পাঠানো (Support System)
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
     
-    if user.id == ADMIN_ID:
-        # অ্যাডমিন যদি রিপ্লাই দেয় (Reply to user)
-        if update.message.reply_to_message:
-            try:
-                # অরিজিনাল ইউজারের আইডি টেক্সট থেকে বের করা (সহজ করার জন্য)
-                # অথবা নিচের লজিক ব্যবহার করুন
-                original_msg = update.message.reply_to_message
-                # এখানে আমরা ধরে নিচ্ছি অ্যাডমিন ইউজারের মেসেজে রিপ্লাই দিচ্ছে
-                # নোট: প্রফেশনাল বটের জন্য ডাটাবেস ব্যবহার করা ভালো
-                await context.bot.send_message(
-                    chat_id=original_msg.forward_from.id if original_msg.forward_from else original_msg.caption_entities[0].url.split('=')[1],
-                    text=f"সাপোর্ট টিম: {update.message.text}"
-                )
-                await update.message.reply_text("✅ উত্তর পাঠানো হয়েছে।")
-            except Exception as e:
-                await update.message.reply_text("❌ উত্তর পাঠানো যায়নি। ইউজারকে সরাসরি আইডি দিয়ে মেসেজ দিন।")
-    else:
-        # ইউজার মেসেজ দিলে তা অ্যাডমিনকে ফরোয়ার্ড করা
-        await context.bot.forward_message(chat_id=ADMIN_ID, from_chat_id=update.message.chat_id, message_id=update.message.message_id)
-        await update.message.reply_text("📩 আপনার মেসেজটি আমাদের সাপোর্ট টিমের কাছে পাঠানো হয়েছে। দয়া করে অপেক্ষা করুন।")
+    keyboard = [
+        [InlineKeyboardButton("🛡️ Premium VPN", callback_data='vpn'), InlineKeyboardButton("🎨 Adobe Explore", callback_data='adobe')],
+        [InlineKeyboardButton("📺 YouTube Premium", callback_data='youtube'), InlineKeyboardButton("🤖 ChatGPT Plus", callback_data='chatgpt')],
+        [InlineKeyboardButton("💎 Gemini Pro", callback_data='gemini'), InlineKeyboardButton("💳 Payment System", callback_data='payment')],
+        [InlineKeyboardButton("📞 Contact Admin", callback_data='contact_admin')]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    welcome_text = f"হ্যালো {user.first_name}!\nTrendy Tone শপে আপনাকে স্বাগত। আমাদের সার্ভিসগুলো দেখতে নিচের বাটনগুলো ব্যবহার করুন।"
+    await update.message.reply_text(welcome_text, reply_markup=reply_markup)
 
-# অ্যাডমিন প্যানেল কমান্ড
-async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id == ADMIN_ID:
-        keyboard = [
-            [InlineKeyboardButton("বট স্ট্যাটাস", callback_data='status')],
-            [InlineKeyboardButton("ইউজারদের ব্রডকাস্ট করুন", callback_data='broadcast')]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text('🛠 অ্যাডমিন প্যানেল:', reply_markup=reply_markup)
-    else:
-        await update.message.reply_text("দুঃখিত, এই কমান্ডটি শুধুমাত্র অ্যাডমিনের জন্য।")
-
-# বাটন ক্লিক হ্যান্ডলার
+# বাটন হ্যান্ডলার
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
-    if query.data == 'status':
-        await query.edit_message_text(text="বট বর্তমানে অনলাইন আছে এবং সঠিকভাবে কাজ করছে।")
+    if query.data == 'vpn':
+        text = "🛡️ **Premium VPN Services:**\n\n✅ NordVPN\n✅ ExpressVPN\n✅ Surfshark\n✅ CyberGhost\n\nঅর্ডার করতে সরাসরি মেসেজ দিন।"
+        await query.message.reply_text(text, parse_mode='Markdown')
+
+    elif query.data == 'adobe':
+        text = "🎨 **Adobe Explore:**\n\n🔹 ১ মাস মেয়াদী\n🔹 ৩ মাস মেয়াদী\n\nপছন্দমতো প্যাকেজটি বেছে নিয়ে আমাদের জানান।"
+        await query.message.reply_text(text, parse_mode='Markdown')
+
+    elif query.data == 'youtube':
+        text = "📺 **YouTube Premium:**\n\n✅ ১ মাস মেয়াদী\n✅ ব্যাকগ্রাউন্ড প্লে ও বিজ্ঞাপনহীন।"
+        await query.message.reply_text(text, parse_mode='Markdown')
+
+    elif query.data == 'chatgpt':
+        text = "🤖 **ChatGPT Plus:**\n\n✅ ১ মাস মেয়াদী - সচল (Available)\n❌ ১ বছর মেয়াদী - [SOLD OUT]"
+        await query.message.reply_text(text, parse_mode='Markdown')
+
+    elif query.data == 'gemini':
+        text = "💎 **Gemini Pro:**\n\n✅ ১ মাস মেয়াদী সাবস্ক্রিপশন।"
+        await query.message.reply_text(text, parse_mode='Markdown')
+
+    elif query.data == 'payment':
+        text = (
+            "💳 **Payment System:**\n\n"
+            "🔸 বিকাশ: 01642012385\n"
+            "🔸 নগদ: 01788098356\n"
+            "🔸 রকেট: 01642012385\n"
+            "🔸 বাইন্যান্স ID: 929079815\n\n"
+            "পেমেন্ট করার পর ট্রানজিশন আইডির স্ক্রিনশট এখানে পাঠান।"
+        )
+        await query.message.reply_text(text, parse_mode='Markdown')
+
+    elif query.data == 'contact_admin':
+        await query.message.reply_text("আপনার সমস্যা বা অর্ডার সম্পর্কে এখানে লিখুন। এডমিন সরাসরি আপনার সাথে কথা বলবে।")
+
+# সাপোর্ট ও অর্ডার ফরওয়ার্ডিং
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    
+    if user.id == ADMIN_ID:
+        if update.message.reply_to_message:
+            try:
+                # এডমিন যখন ইউজারকে উত্তর দিবে
+                target_id = update.message.reply_to_message.forward_from.id
+                await context.bot.send_message(chat_id=target_id, text=f"Admin: {update.message.text}")
+                await update.message.reply_text("✅ ইউজারকে উত্তর পাঠানো হয়েছে।")
+            except:
+                await update.message.reply_text("❌ রিপ্লাই দেওয়া সম্ভব হয়নি। ইউজারের প্রাইভেসি চেক করুন।")
+    else:
+        # ইউজার মেসেজ দিলে সরাসরি আপনার কাছে আসবে
+        await context.bot.forward_message(chat_id=ADMIN_ID, from_chat_id=update.message.chat_id, message_id=update.message.message_id)
+        await update.message.reply_text("📩 আপনার মেসেজটি এডমিনের কাছে পাঠানো হয়েছে। অনুগ্রহ করে অপেক্ষা করুন।")
 
 def main():
-    # অ্যাপ্লিকেশন তৈরি
+    if not BOT_TOKEN:
+        print("BOT_TOKEN missing in environment variables!")
+        return
+        
     application = Application.builder().token(BOT_TOKEN).build()
-
-    # হ্যান্ডলার যোগ করা
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("admin", admin_panel))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(button_handler))
-
-    # বট চালু করা
-    print("বট চালু হচ্ছে...")
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    
+    print("Trendy Tone Bot is Running...")
     application.run_polling()
 
 if __name__ == '__main__':
