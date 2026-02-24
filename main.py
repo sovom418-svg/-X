@@ -1,16 +1,43 @@
-    import telebot
-from telebot import types
+import telebot
 
-bot = telebot.TeleBot("YOUR_BOT_TOKEN")
+# আপনার বটের টোকেন এখানে দিন
+TOKEN = 'YOUR_BOT_TOKEN_HERE'
+# আপনার নিজের টেলিগ্রাম আইডি এখানে দিন (অ্যাডমিন আইডি)
+ADMIN_ID = 8273597769  # আপনার আইডি পেতে @userinfobot এ মেসেজ দিন
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    item1 = types.KeyboardButton("🛒 Buy VPN")
-    item2 = types.KeyboardButton("📂 My Orders")
-    item3 = types.KeyboardButton("📞 Support")
-    
-    markup.add(item1, item2, item3)
-    bot.send_message(message.chat.id, "Welcome to Secure Surf Zone!", reply_markup=markup)
+bot = telebot.TeleBot(TOKEN)
 
-bot.polling()
+# ইউজার মেসেজ দিলে তা অ্যাডমিনের কাছে পাঠানো
+@bot.message_handler(func=lambda message: message.chat.id != ADMIN_ID)
+def forward_to_admin(message):
+    try:
+        # অ্যাডমিনকে জানানো কে মেসেজ দিয়েছে
+        user_info = f"📩 নতুন মেসেজ!\n👤 নাম: {message.from_user.first_name}\n🆔 আইডি: {message.chat.id}\n\n"
+        
+        # মেসেজটি অ্যাডমিনকে ফরোয়ার্ড করা
+        bot.send_message(ADMIN_ID, user_info)
+        bot.forward_message(ADMIN_ID, message.chat.id, message.message_id)
+        
+        # ইউজারকে একটি কনফার্মেশন পাঠানো
+        bot.reply_to(message, "আপনার মেসেজটি আমাদের টিমের কাছে পাঠানো হয়েছে। দয়া করে অপেক্ষা করুন।")
+    except Exception as e:
+        print(f"Error: {e}")
+
+# অ্যাডমিন রিপ্লাই দিলে তা ইউজারের কাছে পাঠানো
+@bot.message_handler(func=lambda message: message.chat.id == ADMIN_ID)
+def reply_to_user(message):
+    # চেক করা হচ্ছে অ্যাডমিন কোনো মেসেজ 'Reply' করে লিখছে কি না
+    if message.reply_to_message and message.reply_to_message.forward_from:
+        target_user_id = message.reply_to_message.forward_from.id
+        try:
+            # অ্যাডমিনের মেসেজ ইউজারের কাছে পাঠানো
+            bot.send_message(target_user_id, f"📢 অ্যাডমিন উত্তর দিয়েছে:\n\n{message.text}")
+            bot.send_message(ADMIN_ID, "✅ মেসেজটি সফলভাবে পাঠানো হয়েছে।")
+        except Exception as e:
+            bot.send_message(ADMIN_ID, f"❌ মেসেজ পাঠানো যায়নি। হয়তো ইউজার বটটি ব্লক করেছে।\nError: {e}")
+    else:
+        bot.send_message(ADMIN_ID, "⚠️ অনুগ্রহ করে ইউজারের পাঠানো মেসেজটি 'Reply' করে উত্তর দিন।")
+
+print("বটটি চালু হয়েছে...")
+bot.polling(none_stop=True)
+        
